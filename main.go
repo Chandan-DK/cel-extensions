@@ -16,6 +16,10 @@ func main() {
 		log.Fatalf("Environment creation error: %v", err)
 	}
 
+	runTestsForJsonParse(env)
+}
+
+func runTestsForJsonParse(env *cel.Env) {
 	testCases := []string{
 		`json_parse('[{\"cpu\":512,\"essential\":true,\"image\":\"nginx:1.23.1\",\"memory\":2048,\"name\":\"foo-task\",\"portMappings\":[{\"containerPort\":80,\"hostPort\":80}]}]')`,
 		`json_parse('{"cpu":512,"essential":true,"image":"nginx:1.23.1"}')`,
