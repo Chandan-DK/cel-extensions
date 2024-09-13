@@ -12,10 +12,13 @@ import (
 
 func main() {
 	env, err := cel.NewEnv(
-		cel.Function("json_parse",
-			cel.Overload("json_parse_string",
-				[]*cel.Type{cel.StringType},
-				cel.DynType,
+		cel.Function("json_parse", // Name by which the function will be called in the CEL expression Example: In this case it would be json_parse(`{}`)
+			// Overload gives us a way to define a function that can be used like this json_parse('{"key": "value"}') instead of <string>.json_parse() which would need to use MemberOverload()
+			cel.Overload("json_parse_string", // ID of the Overload (https://pkg.go.dev/github.com/google/cel-go@v0.21.0/common/decls#OverloadDecl.ID)
+				[]*cel.Type{cel.StringType}, // The argument type our custom function will accept
+				cel.DynType,                 // Return type of our custom function
+				// UnaryBinding takes a function of type UnaryOp which is basically a function that takes a `single`` value and produces an output. (https://pkg.go.dev/github.com/google/cel-go@v0.21.0/common/functions#UnaryOp)
+				// Likewise you also have BinaryBinding and FunctionBinding (https://pkg.go.dev/github.com/google/cel-go@v0.21.0/common/functions#pkg-types)
 				cel.UnaryBinding(jsonParseString),
 			),
 		),
@@ -64,9 +67,10 @@ func jsonParseString(val ref.Val) ref.Val {
 }
 
 func convertToCelValue(value any) ref.Val {
+	fmt.Printf("Value Type: %T", value)
 	switch v := value.(type) {
 	case map[string]any:
-		return types.NewDynamicMap(types.DefaultTypeAdapter, v)
+		return types.NewStringInterfaceMap(types.DefaultTypeAdapter, v)
 	case []any:
 		return types.NewDynamicList(types.DefaultTypeAdapter, v)
 	case string:
@@ -93,10 +97,10 @@ func helperFuncToEvaluateExpression(env *cel.Env, expression string) {
 		log.Fatalf("Program creation error: %v", err)
 	}
 
-	out, details, err := prg.Eval(cel.NoVars())
+	out, _, err := prg.Eval(cel.NoVars()) // We pass values for variables that are declared in the environment, using Eval() Example: https://github.com/google/cel-go/tree/master/examples#simple-example-using-builtin-operators
 	if err != nil {
 		log.Fatalf("Evaluation error: %v", err)
 	}
 
-	fmt.Printf("\nOutput: %v\nDetails: %v\n", out, details)
+	fmt.Printf("\nOutput: %v\n\n", out)
 }
